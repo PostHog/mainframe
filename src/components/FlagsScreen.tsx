@@ -6,6 +6,7 @@ import { Screen, Row } from "./Screen";
 import { OIA } from "./OIA";
 import { Cursor } from "./Cursor";
 import { COLS, fmtDate, fmtTime, leftRight, mainframeNow, pad } from "@/lib/screen";
+import posthog from "posthog-js";
 
 export type FlagRow = {
   key: string;
@@ -68,7 +69,15 @@ export function FlagsScreen({ rows, error }: { rows: FlagRow[]; error: string | 
   const back = useCallback(() => router.push("/menu"), [router]);
   const openSelected = useCallback(() => {
     const r = filtered[safeSelected];
-    if (r) router.push(`/menu/flags/${encodeURIComponent(r.key)}`);
+    if (r) {
+      posthog.capture("feature_flag_viewed", {
+        flag_key: r.key,
+        flag_active: r.active,
+        flag_type: r.type,
+        flag_rollout_pct: r.rolloutPct,
+      });
+      router.push(`/menu/flags/${encodeURIComponent(r.key)}`);
+    }
   }, [filtered, safeSelected, router]);
 
   useEffect(() => {

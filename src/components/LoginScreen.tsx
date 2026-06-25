@@ -7,6 +7,7 @@ import { Cursor } from "./Cursor";
 import { signInAction } from "@/app/actions";
 import { isRegion } from "@/lib/regions";
 import { COLS, POSTHOG_BANNER, center, fmtDate, fmtTime, leftRight, mainframeNow } from "@/lib/screen";
+import posthog from "posthog-js";
 
 type FieldName = "account" | "region" | "userid" | "password";
 
@@ -145,6 +146,7 @@ export function LoginScreen() {
       return;
     }
     dispatch({ type: "submit-start" });
+    posthog.capture("sign_in_attempted", { region });
     try {
       const data = new FormData();
       data.set("region", region);

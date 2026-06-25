@@ -6,6 +6,7 @@ import { Screen, Row } from "./Screen";
 import { OIA } from "./OIA";
 import { Cursor } from "./Cursor";
 import { COLS, center, fmtDate, fmtTime, leftRight, mainframeNow, pad } from "@/lib/screen";
+import posthog from "posthog-js";
 
 export type BrowseRow = { shortId: string; name: string; type: string; created: string };
 
@@ -42,7 +43,14 @@ export function BrowseScreen({ rows, error }: { rows: BrowseRow[]; error: string
         if (rows.length === 0) return;
         const clamped = Math.min(selected, rows.length - 1);
         const row = rows[clamped];
-        if (row) router.push(`/menu/browse/${row.shortId}`);
+        if (row) {
+          posthog.capture("insight_opened", {
+            insight_short_id: row.shortId,
+            insight_name: row.name,
+            insight_type: row.type,
+          });
+          router.push(`/menu/browse/${row.shortId}`);
+        }
         return;
       }
       if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(s + 1, rows.length - 1)); return; }

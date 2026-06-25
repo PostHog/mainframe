@@ -6,6 +6,7 @@ import { OIA } from "./OIA";
 import { Cursor } from "./Cursor";
 import { runMenuOption, signOutAction } from "@/app/actions";
 import { COLS, center, fmtDate, fmtTime, leftRight, mainframeNow, pad } from "@/lib/screen";
+import posthog from "posthog-js";
 
 type Option = { key: string; label: string; desc: string; available: boolean };
 
@@ -86,6 +87,11 @@ export function MenuScreen({ email, name, region }: { email: string; name: strin
     return () => clearInterval(id);
   }, []);
 
+  // Identify the authenticated user once when the menu mounts
+  useEffect(() => {
+    posthog.identify(email, { email, name, region });
+  }, [email, name, region]);
+
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -94,9 +100,15 @@ export function MenuScreen({ email, name, region }: { email: string; name: strin
     dispatch({ type: "submit-start" });
     try {
       const res = await runMenuOption(cmd);
+      if (!res.error) {
+        posthog.capture("menu_option_selected", { command: cmd });
+      }
       dispatch({ type: "submit-result", error: res.error, message: res.message });
     } catch (err) {
-      if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) return;
+      if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
+        posthog.capture("menu_option_selected", { command: cmd });
+        return;
+      }
       dispatch({ type: "submit-result", error: "COMMAND FAILED" });
     }
   }, []);

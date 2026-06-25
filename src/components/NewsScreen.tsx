@@ -6,6 +6,7 @@ import { Screen, Row } from "./Screen";
 import { OIA } from "./OIA";
 import { Cursor } from "./Cursor";
 import { COLS, fmtDate, fmtLongDate, fmtTime, leftRight, mainframeNow, pad } from "@/lib/screen";
+import posthog from "posthog-js";
 
 export type NewsItem = {
   headline: string;
@@ -181,6 +182,15 @@ export function NewsScreen({
       if (e.key === "Enter") {
         e.preventDefault();
         if (filtered.length === 0) return;
+        const item = filtered[safeSelected];
+        if (item) {
+          posthog.capture("news_article_read", {
+            headline: item.headline,
+            section: item.section,
+            pub_date: item.pubDate,
+            word_count: item.wordCount,
+          });
+        }
         setMode("detail");
         setScroll(0);
         return;

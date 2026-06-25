@@ -7,6 +7,7 @@ import { OIA } from "./OIA";
 import { Cursor } from "./Cursor";
 import { COLS, fmtDate, fmtTime, leftRight, mainframeNow, pad } from "@/lib/screen";
 import type { ExperimentStatus } from "@/lib/posthog-api";
+import posthog from "posthog-js";
 
 export type ExperimentRow = {
   id: number;
@@ -76,7 +77,16 @@ export function ExperimentsScreen({ rows, error }: { rows: ExperimentRow[]; erro
   const back = useCallback(() => router.push("/menu"), [router]);
   const openSelected = useCallback(() => {
     const r = filtered[safeSelected];
-    if (r) router.push(`/menu/experiments/${r.id}`);
+    if (r) {
+      posthog.capture("experiment_viewed", {
+        experiment_id: r.id,
+        experiment_name: r.name,
+        experiment_status: r.status,
+        flag_key: r.flagKey,
+        variant_count: r.variantCount,
+      });
+      router.push(`/menu/experiments/${r.id}`);
+    }
   }, [filtered, safeSelected, router]);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import { REGIONS, regionHost, type Region } from "@/lib/regions";
 import { OAUTH_SCOPE_STRING } from "@/lib/scopes";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 type PostHogProfile = {
   sub?: string;
@@ -56,6 +57,28 @@ export const authConfig: NextAuthConfig = {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
+      }
+      // `account` is only present on initial sign-in (not token refreshes)
+      if (account && token.email) {
+        const posthog = getPostHogClient();
+        const distinctId = token.email as string;
+        posthog.identify({
+          distinctId,
+          properties: {
+            email: token.email,
+            name: token.name,
+            region: token.region,
+          },
+        });
+        posthog.capture({
+          distinctId,
+          event: "user_signed_in",
+          properties: {
+            provider: account.provider,
+            region: token.region,
+          },
+        });
+        await posthog.shutdown();
       }
       return token;
     },
