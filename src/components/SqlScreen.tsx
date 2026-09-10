@@ -7,7 +7,6 @@ import { OIA } from "./OIA";
 import { Cursor } from "./Cursor";
 import { runHogQueryAction, type QueryActionResult } from "@/app/actions";
 import { COLS, center, fmtDate, fmtTime, leftRight, mainframeNow, pad } from "@/lib/screen";
-import posthog from "posthog-js";
 
 const EDITOR_START_ROW = 6;
 const EDITOR_HEIGHT = 5;
@@ -86,12 +85,6 @@ export function SqlScreen() {
   const run = useCallback(async () => {
     dispatch({ type: "run-start" });
     const result = await runHogQueryAction(stateRef.current.buffer);
-    if (!result.ok) {
-      posthog.capture("hogql_query_failed", {
-        status: result.status,
-        error: result.message,
-      });
-    }
     dispatch({ type: "run-result", result });
   }, []);
 

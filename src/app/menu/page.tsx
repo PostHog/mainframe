@@ -9,6 +9,7 @@ export default async function MenuPage() {
   const region = (session.user.region as string | undefined) ?? "US";
   return (
     <MenuScreen
+      userId={session.user.id}
       email={session.user.email ?? "UNKNOWN"}
       name={session.user.name ?? session.user.email ?? "USER"}
       region={region}

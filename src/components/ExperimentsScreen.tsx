@@ -80,7 +80,6 @@ export function ExperimentsScreen({ rows, error }: { rows: ExperimentRow[]; erro
     if (r) {
       posthog.capture("experiment_viewed", {
         experiment_id: r.id,
-        experiment_name: r.name,
         experiment_status: r.status,
         flag_key: r.flagKey,
         variant_count: r.variantCount,
