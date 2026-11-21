@@ -6,11 +6,12 @@ const DEV_HOSTS = "http://localhost:* http://127.0.0.1:*";
 
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' ${POSTHOG_HOSTS}${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self' data:",
   `connect-src 'self' ${POSTHOG_HOSTS}${isDev ? ` ws: ${DEV_HOSTS}` : ""}`,
+  "worker-src 'self' blob:",
   `form-action 'self' ${POSTHOG_HOSTS}${isDev ? ` ${DEV_HOSTS}` : ""}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",

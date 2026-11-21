@@ -46,7 +46,6 @@ export function BrowseScreen({ rows, error }: { rows: BrowseRow[]; error: string
         if (row) {
           posthog.capture("insight_opened", {
             insight_short_id: row.shortId,
-            insight_name: row.name,
             insight_type: row.type,
           });
           router.push(`/menu/browse/${row.shortId}`);

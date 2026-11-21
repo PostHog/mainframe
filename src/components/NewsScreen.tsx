@@ -185,7 +185,6 @@ export function NewsScreen({
         const item = filtered[safeSelected];
         if (item) {
           posthog.capture("news_article_read", {
-            headline: item.headline,
             section: item.section,
             pub_date: item.pubDate,
             word_count: item.wordCount,

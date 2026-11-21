@@ -28,8 +28,11 @@ function posthogProvider(region: Region) {
     },
     checks: ["pkce", "state"] as ("pkce" | "state")[],
     profile(profile: PostHogProfile) {
+      if (!profile.sub) {
+        throw new Error("PostHog OIDC profile did not include a stable subject identifier");
+      }
       return {
-        id: profile.sub ?? profile.email ?? "unknown",
+        id: profile.sub,
         email: profile.email ?? null,
         name: profile.name ?? profile.preferred_username ?? profile.email ?? "user",
         region,
@@ -46,6 +49,7 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user, account }) {
       if (user) {
+        token.sub = user.id;
         token.email = user.email ?? token.email;
         token.name = user.name ?? token.name;
         // @ts-expect-error custom field
@@ -59,9 +63,9 @@ export const authConfig: NextAuthConfig = {
         token.expiresAt = account.expires_at;
       }
       // `account` is only present on initial sign-in (not token refreshes)
-      if (account && token.email) {
+      if (account && token.sub) {
         const posthog = getPostHogClient();
-        const distinctId = token.email as string;
+        const distinctId = token.sub;
         posthog.identify({
           distinctId,
           properties: {
@@ -86,6 +90,7 @@ export const authConfig: NextAuthConfig = {
       if (session.user) {
         session.user.email = (token.email as string) ?? session.user.email;
         session.user.name = (token.name as string) ?? session.user.name;
+        session.user.id = token.sub;
         // @ts-expect-error custom field
         session.user.region = token.region;
       }

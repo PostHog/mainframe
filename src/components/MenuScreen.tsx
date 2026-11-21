@@ -73,7 +73,7 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-export function MenuScreen({ email, name, region }: { email: string; name: string; region: string }) {
+export function MenuScreen({ userId, email, name, region }: { userId: string; email: string; name: string; region: string }) {
   const [state, dispatch] = useReducer(reducer, INITIAL);
   const [now, setNow] = useState<{ date: string; time: string } | null>(null);
 
@@ -87,16 +87,22 @@ export function MenuScreen({ email, name, region }: { email: string; name: strin
     return () => clearInterval(id);
   }, []);
 
-  // Identify the authenticated user once when the menu mounts
+  // Restore the authenticated identity after a page refresh.
   useEffect(() => {
-    posthog.identify(email, { email, name, region });
-  }, [email, name, region]);
+    posthog.identify(userId, { email, name, region });
+  }, [userId, email, name, region]);
 
   const stateRef = useRef(state);
   stateRef.current = state;
 
   const submit = useCallback(async () => {
-    const cmd = stateRef.current.command;
+    const cmd = stateRef.current.command.trim().toUpperCase();
+    const isSignOut = ["X", "EXIT", "LOGOFF", "QUIT"].includes(cmd);
+    if (isSignOut) {
+      void signOutAction();
+      posthog.reset();
+      return;
+    }
     dispatch({ type: "submit-start" });
     try {
       const res = await runMenuOption(cmd);
@@ -124,6 +130,7 @@ export function MenuScreen({ email, name, region }: { email: string; name: strin
       if (e.key === "F3" || e.key === "F12") {
         e.preventDefault();
         dispatch({ type: "submit-start" });
+        posthog.reset();
         void signOutAction().catch(() => dispatch({ type: "submit-result", error: "LOGOFF FAILED" }));
         return;
       }

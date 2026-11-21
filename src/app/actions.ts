@@ -13,7 +13,7 @@ export async function signInAction(formData: FormData) {
 
 export async function signOutAction() {
   const session = await auth();
-  const distinctId = session?.user?.email;
+  const distinctId = session?.user?.id;
   if (distinctId) {
     const posthog = getPostHogClient();
     posthog.capture({ distinctId, event: "user_signed_out" });
@@ -62,7 +62,8 @@ export async function runHogQueryAction(query: string): Promise<QueryActionResul
   const trimmed = query.trim();
   if (!trimmed) return { ok: false, status: 400, message: "EMPTY QUERY" };
   const session = await auth();
-  const distinctId = session?.user?.email ?? "anonymous";
+  const distinctId = session?.user?.id;
+  if (!distinctId) return { ok: false, status: 401, message: "NO SESSION" };
   try {
     const result = await runHogQL(trimmed);
     if (result.error) {
@@ -70,7 +71,7 @@ export async function runHogQueryAction(query: string): Promise<QueryActionResul
       posthog.capture({
         distinctId,
         event: "hogql_query_executed",
-        properties: { success: false, error: result.error, query_length: trimmed.length },
+        properties: { success: false, query_length: trimmed.length },
       });
       await posthog.shutdown();
       return { ok: false, status: 400, message: result.error };
@@ -96,7 +97,6 @@ export async function runHogQueryAction(query: string): Promise<QueryActionResul
       event: "hogql_query_executed",
       properties: {
         success: false,
-        error: err instanceof PostHogApiError ? err.message : String(err),
         status: err instanceof PostHogApiError ? err.status : 500,
         query_length: trimmed.length,
       },
